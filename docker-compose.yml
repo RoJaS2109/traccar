@@ -59,11 +59,8 @@ services:
       - TZ=America/Argentina/Buenos_Aires
 
   agente-ia:
-    build:
-      context: ./traccar-web/tools/agente-ia
-      dockerfile: Dockerfile
-    pull_policy: never
     image: agente-ia:latest
+    pull_policy: never
     container_name: rudatrak-agente-ia
     restart: unless-stopped
     ports:
