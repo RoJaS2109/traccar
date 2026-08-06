@@ -58,13 +58,13 @@ services:
     environment:
       - TZ=America/Argentina/Buenos_Aires
 
-  rudatrak-ia:
+  agente-ia:
     build:
-      context: ./frontend/tools/rudatrak-ia
+      context: ./traccar-web/tools/agente-ia
       dockerfile: Dockerfile
     pull_policy: never
-    image: rudatrak-ia:latest
-    container_name: rudatrak-ia
+    image: agente-ia:latest
+    container_name: rudatrak-agente-ia
     restart: unless-stopped
     ports:
       - "3008:3008"
@@ -75,7 +75,7 @@ services:
       - redis
       - ollama
     volumes:
-      - /data/compose/rudatrak/rudatrak-ia-logs:/app/logs
+      - /data/compose/rudatrak/agente-ia-logs:/app/logs
     environment:
       - NODE_ENV=production
       - TZ=America/Argentina/Buenos_Aires
