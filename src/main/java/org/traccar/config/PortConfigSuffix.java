@@ -198,6 +198,7 @@ import org.traccar.protocol.RaveonProtocol;
 import org.traccar.protocol.RecodaProtocol;
 import org.traccar.protocol.RetranslatorProtocol;
 import org.traccar.protocol.RfTrackProtocol;
+import org.traccar.protocol.RinhoProtocol;
 import org.traccar.protocol.RitiProtocol;
 import org.traccar.protocol.RoboTrackProtocol;
 import org.traccar.protocol.RstProtocol;
@@ -562,6 +563,7 @@ public class PortConfigSuffix extends ConfigSuffix<Integer> {
         put(RadshidProtocol.class, 5265);
         put(R16hProtocol.class, 5266);
         put(JimiPhotoProtocol.class, 5267);
+        put(RinhoProtocol.class, 5031);
     }
 
     PortConfigSuffix(String key, List<KeyType> types) {
