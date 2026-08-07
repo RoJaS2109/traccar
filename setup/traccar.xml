@@ -1,12 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE properties SYSTEM 'http://java.sun.com/dtd/properties.dtd'>
 <properties>
-
     <!-- Documentation: https://www.traccar.org/configuration-file/ -->
 
+    <!-- Database Configuration -->
     <entry key='database.driver'>org.h2.Driver</entry>
     <entry key='database.url'>jdbc:h2:./data/database</entry>
     <entry key='database.user'>sa</entry>
     <entry key='database.password' />
+
+    <!-- Server Configuration -->
+    <entry key='server.port'>8082</entry>
+    <entry key='server.ssl'>false</entry>
+
+    <!-- Web UI Configuration -->
+    <entry key='web.port'>8082</entry>
+    <entry key='web.address'>0.0.0.0</entry>
+
+    <!-- GPS Protocols -->
+    <entry key='trackerServer.port'>5031</entry>
+
+    <!-- EventForwarder para rudatrak-ia -->
+    <entry key='eventforwarder.enable'>true</entry>
+    <entry key='eventforwarder.url'>http://rudatrak-ia:3008/webhook/evento</entry>
+    <entry key='eventforwarder.json'>true</entry>
+    <entry key='eventforwarder.header.authorization'>Bearer ${WEBHOOK_TOKEN}</entry>
+
+    <!-- TELEGRAM Notificador -->
+    <entry key='notificator.telegram.enabled'>true</entry>
+    <entry key='notificator.telegram.key'>TU_BOT_TOKEN_AQUI</entry>
 
 </properties>
