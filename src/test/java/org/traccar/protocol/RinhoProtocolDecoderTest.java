@@ -53,11 +53,11 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
 
         // RCR — Evento 13 (puerta abierta), debe generar alarma door
         verifyPosition(decoder, text(
-                ">RCR13080726151025-3460368-0583815600000080;#0001;ID=KJA-169;*28<"));
+                ">RCR13080726151025-3460368-0583815600000080;#0001;ID=KJA-169;*16<"));
 
         // RCR — Evento 19 (intrusión), debe generar alarma tampering
         verifyPosition(decoder, text(
-                ">RCR19080726152030-3460400-0583820000000080;#0002;ID=KJA-169;*2F<"));
+                ">RCR19080726152030-3460400-0583820000000080;#0002;ID=KJA-169;*11<"));
     }
 
     @Test
@@ -90,7 +90,7 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
 
         // Evento 13 → door
         var pos13 = (Position) decoder.decode(null, null, text(
-                ">RCR13080726151025-3460368-0583815600000080;#0001;ID=KJA-169;*28<"));
+                ">RCR13080726151025-3460368-0583815600000080;#0001;ID=KJA-169;*16<"));
         assertNotNull(pos13);
         String alarms13 = (String) pos13.getAttributes().get(Position.KEY_ALARM);
         assertTrue(alarms13 != null && alarms13.contains("door"),
@@ -98,7 +98,7 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
 
         // Evento 19 → tampering
         var pos19 = (Position) decoder.decode(null, null, text(
-                ">RCR19080726152030-3460400-0583820000000080;#0002;ID=KJA-169;*2F<"));
+                ">RCR19080726152030-3460400-0583820000000080;#0002;ID=KJA-169;*11<"));
         assertNotNull(pos19);
         String alarms19 = (String) pos19.getAttributes().get(Position.KEY_ALARM);
         assertTrue(alarms19 != null && alarms19.contains("tampering"),
