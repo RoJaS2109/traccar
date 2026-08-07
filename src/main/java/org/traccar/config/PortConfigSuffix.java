@@ -563,7 +563,7 @@ public class PortConfigSuffix extends ConfigSuffix<Integer> {
         put(RadshidProtocol.class, 5265);
         put(R16hProtocol.class, 5266);
         put(JimiPhotoProtocol.class, 5267);
-        put(RinhoProtocol.class, 5031);
+        put(RinhoProtocol.class, 5269);
     }
 
     PortConfigSuffix(String key, List<KeyType> types) {
