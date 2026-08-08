@@ -321,4 +321,41 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
         System.out.println("  Válido:  " + position.getValid());
     }
 
+    @Test
+    public void testDecodeRAD() throws Exception {
+
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RAD — Reporte Analógico (8 canales: AIN00-05 + batería principal + backup)
+        var position = (Position) decoder.decode(null, null, text(
+                ">RAD0008082601080803260320000000000000000000000423;ID=KJA-169;*26<"));
+
+        assertNotNull(position, "El decoder debería parsear RAD correctamente");
+
+        // Fecha: 08/08/2026 01:08:08 UTC
+        var cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        cal.setTime(position.getFixTime());
+        assertEquals(2026, cal.get(java.util.Calendar.YEAR));
+        assertEquals(8, cal.get(java.util.Calendar.DAY_OF_MONTH));
+        assertEquals(8, cal.get(java.util.Calendar.MONTH) + 1);
+        assertEquals(1, cal.get(java.util.Calendar.HOUR_OF_DAY));
+        assertEquals(8, cal.get(java.util.Calendar.MINUTE));
+        assertEquals(8, cal.get(java.util.Calendar.SECOND));
+
+        // Canales analógicos
+        assertEquals(3.26, ((Number) position.getAttributes().get("ain00")).doubleValue(), 0.01);
+        assertEquals(3.20, ((Number) position.getAttributes().get("ain01")).doubleValue(), 0.01);
+        assertEquals(0.0, ((Number) position.getAttributes().get("ain02")).doubleValue(), 0.01);
+        assertEquals(0.0, ((Number) position.getAttributes().get("ain03")).doubleValue(), 0.01);
+
+        // Batería backup: 4.23V
+        assertEquals(4.23, ((Number) position.getAttributes().get("battery")).doubleValue(), 0.01);
+
+        System.out.println("✅ RAD decodificado:");
+        System.out.println("  Fecha:   " + position.getFixTime());
+        System.out.println("  AIN00:   " + position.getAttributes().get("ain00") + "V");
+        System.out.println("  AIN01:   " + position.getAttributes().get("ain01") + "V");
+        System.out.println("  Batería: " + position.getAttributes().get("battery") + "V");
+    }
+
 }
