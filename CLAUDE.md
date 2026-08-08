@@ -124,6 +124,49 @@ El directorio `protocol/` contiene ~675 archivos Java que implementan **más de 
 - `BaseProtocolEncoder.java` — envío de comandos al dispositivo
 - `BaseFrameDecoder.java` — delimitación de tramas en el stream
 
+### Protocolo Rinho (`RinhoProtocol*`)
+
+Implementación propia para el tracker GPS Rinho IoT (`EG915U + LC86G`). Usa UDP con mensajes de texto.
+
+**Archivos:**
+| Archivo | Líneas | Descripción |
+|---------|--------|-------------|
+| `RinhoProtocol.java` | 48 | Registro Netty, comandos soportados |
+| `RinhoProtocolDecoder.java` | ~2900 | Decodificador principal (32 tipos de reporte) |
+| `RinhoProtocolEncoder.java` | 73 | Comandos al dispositivo (QGP, SXP00, QVR) |
+| `RinhoProtocolDecoderTest.java` | 614 | 20 tests JUnit 5 |
+
+**Formato de mensajes:** `>TYPE...;#NNNN;ID=XXXX;*CC<` con checksum XOR.
+
+**Tipos de reporte:** RCQ (principal), RER (CAN bus), RCR (compacto), RGP, RCW, RCY, RAD, RAE, RIO, REQ (OBD-II), RVR, RSN, RIMEI, RTAG, RCXHWI, RTX, RIB, RSC, RLC, RHT y 10 variantes CQ con sufijos (RCP, RCT, RCU, RCV, RBQ, RBR, RBV, RHQ, RHR, RHV).
+
+**Sistema de alarmas — `decodeAlarm(int eventCode)`:**
+Mapea 44 códigos de evento Rinho a constantes `Position.ALARM_*` de Traccar. 13 códigos informativos usan `ALARM_GENERAL` para ser visibles en la UI sin disparar alertas. 25 códigos RES. devuelven `null`.
+
+**`getEventDescription(int eventCode)`** devuelve la descripción en español de `listado.txt` y la almacena en el atributo `eventDescription`.
+
+Patrón en los 5 puntos donde se setea alarma + descripción:
+```java
+String alarm = decodeAlarm(eventCode);
+if (alarm != null) {
+    position.addAlarm(alarm);
+}
+String desc = getEventDescription(eventCode);
+if (desc != null) {
+    position.set("eventDescription", desc);
+}
+```
+
+**ACK:** El decoder envía `>ACK;#NNNN;ID=XXXX;*CC<` por cada mensaje recibido con `msgNum < 0x8000`.
+
+**Importante — sincronización con docker:** El decoder también existe en `traccar-web/docker/org/traccar/protocol/RinhoProtocolDecoder.java` para el Dockerfile multi-stage. Cada cambio en el decoder debe sincronizarse:
+```bash
+cp traccar/src/main/java/org/traccar/protocol/RinhoProtocolDecoder.java \
+   traccar/traccar-web/docker/org/traccar/protocol/RinhoProtocolDecoder.java
+```
+
+**Documentación completa:** [`traccar-web/docs/GPS_RINHO/protocolo-rinho.md`](traccar-web/docs/GPS_RINHO/protocolo-rinho.md)
+
 ## Personalización de Traccar-web (branding)
 
 `OverrideTextFilter.java` intercepta respuestas HTTP a archivos `.html`, `.js`, `.css` y `.webmanifest` y reemplaza placeholders:
