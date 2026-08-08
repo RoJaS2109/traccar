@@ -275,4 +275,50 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
         System.out.println("  Válido:  " + position.getValid());
     }
 
+    @Test
+    public void testDecodeRCRExtended() throws Exception {
+
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RCR extendido (con GPS/GSM + odómetro en el sufijo)
+        var position = (Position) decoder.decode(null, null, text(
+                ">RCR00070826204738-3869514-062351130001087F000000000000013001200000099+0000FF;ID=KJA-169;*62<"));
+
+        assertNotNull(position, "El decoder debería parsear RCR extendido correctamente");
+
+        // Fecha: 07/08/2026 20:47:38 UTC (DD/MM/YY en RCR)
+        var cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        cal.setTime(position.getFixTime());
+        assertEquals(2026, cal.get(java.util.Calendar.YEAR));
+        assertEquals(7, cal.get(java.util.Calendar.DAY_OF_MONTH));
+        assertEquals(8, cal.get(java.util.Calendar.MONTH) + 1); // August
+        assertEquals(20, cal.get(java.util.Calendar.HOUR_OF_DAY));
+        assertEquals(47, cal.get(java.util.Calendar.MINUTE));
+        assertEquals(38, cal.get(java.util.Calendar.SECOND));
+
+        // Coordenadas: -38.69514, -62.35113
+        assertEquals(-38.69514, position.getLatitude(), 0.00001);
+        assertEquals(-62.35113, position.getLongitude(), 0.00001);
+
+        // Speed 0, Course 108°
+        assertEquals(0.0, position.getSpeed(), 0.1);
+        assertEquals(108.0, position.getCourse(), 0.1);
+
+        // IO flags: 0x7F
+        assertEquals(0x7F, ((Number) position.getAttributes().get(Position.KEY_INPUT)).intValue());
+        assertTrue(position.getValid());
+
+        // Sin alarma (evento 00)
+        assertEquals(0, ((Number) position.getAttributes().get(Position.KEY_EVENT)).intValue());
+
+        System.out.println("✅ RCR extendido decodificado:");
+        System.out.println("  Fecha:   " + position.getFixTime());
+        System.out.println("  Lat:     " + position.getLatitude());
+        System.out.println("  Lon:     " + position.getLongitude());
+        System.out.println("  Course:  " + position.getCourse() + "°");
+        System.out.println("  Speed:   " + position.getSpeed() + " kn");
+        System.out.println("  IO:      0x" + Integer.toHexString(((Number) position.getAttributes().get(Position.KEY_INPUT)).intValue()));
+        System.out.println("  Válido:  " + position.getValid());
+    }
+
 }
