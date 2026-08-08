@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.traccar.ProtocolTest;
 import org.traccar.model.Position;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -111,6 +112,68 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
         String alarms78 = (String) pos78.getAttributes().get(Position.KEY_ALARM);
         assertTrue(alarms78 != null && alarms78.contains("tow"),
                 "Evento 78 debería generar alarma tow: " + alarms78);
+    }
+
+    @Test
+    public void testDecodeRCW() throws Exception {
+
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RCW — Reporte Compacto WiFi (course antes de speed, odómetro decimal)
+        var position = (Position) decoder.decode(null, null, text(
+                ">RCW00070826204659-3869515-0623511310800011200003000009900000000007F;ID=KJA-169;*4B<"));
+
+        assertNotNull(position, "El decoder debería parsear RCW correctamente");
+
+        // Fecha: 07/08/2026 20:46:59 UTC
+        var cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        cal.setTime(position.getFixTime());
+        assertEquals(2026, cal.get(java.util.Calendar.YEAR));
+        assertEquals(7, cal.get(java.util.Calendar.DAY_OF_MONTH));
+        assertEquals(8, cal.get(java.util.Calendar.MONTH) + 1);
+        assertEquals(20, cal.get(java.util.Calendar.HOUR_OF_DAY));
+        assertEquals(46, cal.get(java.util.Calendar.MINUTE));
+        assertEquals(59, cal.get(java.util.Calendar.SECOND));
+
+        // Coordenadas DEG_DEG: -3869515 → -38.69515, -06235113 → -62.35113
+        assertEquals(-38.69515, position.getLatitude(), 0.00001);
+        assertEquals(-62.35113, position.getLongitude(), 0.00001);
+
+        // Course 108°, Speed 0 km/h → 0 nudos
+        assertEquals(108.0, position.getCourse(), 0.1);
+        assertEquals(0.0, position.getSpeed(), 0.1);
+
+        // GPS: power=1 (ON), satellites=12, fix=3D, pdop=0, age=0
+        assertEquals(1, ((Number) position.getAttributes().get(Position.KEY_GPS)).intValue());
+        assertEquals(12, ((Number) position.getAttributes().get(Position.KEY_SATELLITES)).intValue());
+        assertEquals(0, ((Number) position.getAttributes().get(Position.KEY_PDOP)).intValue());
+
+        // GSM: modem=0, networkType=0, csq=99 (sin señal)
+        assertEquals(0, ((Number) position.getAttributes().get("modemPower")).intValue());
+        assertEquals(0, ((Number) position.getAttributes().get("networkType")).intValue());
+        assertEquals(99, ((Number) position.getAttributes().get(Position.KEY_RSSI)).intValue());
+
+        // Odómetro decimal: 0 metros (campo de 10 dígitos: 0000000000)
+        assertEquals(0L, ((Number) position.getAttributes().get(Position.KEY_ODOMETER)).longValue());
+
+        // IGN+IN flags: 0x7F → IGN=0 (bit 7), IN0-6=1 (bits 0-6)
+        assertEquals(0x7F, ((Number) position.getAttributes().get(Position.KEY_INPUT)).intValue());
+
+        // Position should be valid
+        assertTrue(position.getValid());
+
+        System.out.println("✅ RCW decodificado correctamente:");
+        System.out.println("  Fecha:       " + position.getFixTime());
+        System.out.println("  Lat:         " + position.getLatitude());
+        System.out.println("  Lon:         " + position.getLongitude());
+        System.out.println("  Course:      " + position.getCourse() + "°");
+        System.out.println("  Speed:       " + position.getSpeed() + " kn");
+        System.out.println("  GPS:         ON, " + position.getAttributes().get(Position.KEY_SATELLITES) + " sats, 3D fix");
+        System.out.println("  NetworkType: " + position.getAttributes().get("networkType"));
+        System.out.println("  Odómetro:    " + position.getAttributes().get(Position.KEY_ODOMETER) + " m");
+        System.out.println("  RSSI:        " + position.getAttributes().get(Position.KEY_RSSI));
+        System.out.println("  IGN+IN:      0x" + Integer.toHexString(((Number) position.getAttributes().get(Position.KEY_INPUT)).intValue()));
+        System.out.println("  Válido:      " + position.getValid());
     }
 
 }
