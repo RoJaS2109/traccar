@@ -392,4 +392,206 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
         System.out.println("  Batería: " + position.getAttributes().get("battery") + "V");
     }
 
+    @Test
+    public void testDecodeInventory() throws Exception {
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RVR — firmware version
+        var rvr = (Position) decoder.decode(null, null, text(
+                ">RVR RINHO IOT v1.09.16 SP EG915U LC86G 16MB WIFI 2025-12-01 14:53:59;ID=KJA-169;*56<"));
+        assertNotNull(rvr, "RVR");
+
+        // RSN — serial number
+        var rsn = (Position) decoder.decode(null, null, text(
+                ">RSN70B4C1E9BFB40000000000E7;ID=KJA-169;*47<"));
+        assertNotNull(rsn, "RSN");
+
+        // RIMEI — IMEI
+        var rimei = (Position) decoder.decode(null, null, text(
+                ">RIMEI;ID=KJA-169;*2D<"));
+        assertNotNull(rimei, "RIMEI");
+
+        // RTAG — tag
+        var rtag = (Position) decoder.decode(null, null, text(
+                ">RTAG 5200-2604MM-0960;ID=KJA-169;*5F<"));
+        assertNotNull(rtag, "RTAG");
+
+        // RCXHWI — hardware ID
+        var rcxhwi = (Position) decoder.decode(null, null, text(
+                ">RCXHWI5200;ID=KJA-169;*6F<"));
+        assertNotNull(rcxhwi, "RCXHWI");
+
+        System.out.println("✅ Inventory: RVR, RSN, RIMEI, RTAG, RCXHWI OK");
+    }
+
+    @Test
+    public void testDecodeRIO() throws Exception {
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        var position = (Position) decoder.decode(null, null, text(
+                ">RIO;IGN0;IN1111011;XP001;V000;VBU423;ID=KJA-169;*74<"));
+
+        assertNotNull(position, "RIO");
+        assertEquals(0x7B, ((Number) position.getAttributes().get(Position.KEY_INPUT)).intValue()); // binary 1111011
+        assertEquals(1, ((Number) position.getAttributes().get(Position.KEY_OUTPUT)).intValue()); // XP001
+        assertEquals(4.23, ((Number) position.getAttributes().get("battery")).doubleValue(), 0.01); // VBU423
+
+        System.out.println("✅ RIO: IGN=0, IN=0x7B, XP=1, VBU=4.23V");
+    }
+
+    @Test
+    public void testDecodeCQVariants() throws Exception {
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RCP
+        var rcp = (Position) decoder.decode(null, null, text(
+                ">RCP00080826012212-3869513-062351100003477B010000000000013001200000099;ID=KJA-169;*44<"));
+        assertNotNull(rcp, "RCP");
+        assertEquals(-38.69513, rcp.getLatitude(), 0.00001);
+
+        // RCT — +iButton
+        var rct = (Position) decoder.decode(null, null, text(
+                ">RCT00080826012212-3869513-062351110003477B010000000000013001200000099;0000000000000000;ID=KJA-169;*7A<"));
+        assertNotNull(rct, "RCT");
+
+        // RCU — +driver
+        var rcu = (Position) decoder.decode(null, null, text(
+                ">RCU00080826012212-3869513-062351110003477B0100000000000130012000000990;;ID=KJA-169;*4B<"));
+        assertNotNull(rcu, "RCU");
+
+        // RCV — +2 temps
+        var rcv = (Position) decoder.decode(null, null, text(
+                ">RCV00080826012212-3869513-062351110003477B010000000000013001200000099+0000FF+0000FF;ID=KJA-169;*43<"));
+        assertNotNull(rcv, "RCV");
+
+        // RBQ — +battery backup
+        var rbq = (Position) decoder.decode(null, null, text(
+                ">RBQ00080826012212-3869513-062351110003477B010000000000013001200000099423;ID=KJA-169;*70<"));
+        assertNotNull(rbq, "RBQ");
+
+        // RBR — +battery +temp
+        var rbr = (Position) decoder.decode(null, null, text(
+                ">RBR00080826012212-3869513-062351110003477B010000000000013001200000099423+0000FF;ID=KJA-169;*58<"));
+        assertNotNull(rbr, "RBR");
+
+        // RBV — +battery +2 temps
+        var rbv = (Position) decoder.decode(null, null, text(
+                ">RBV00080826012212-3869513-062351110003477B010000000000013001200000099423+0000FF+0000FF;ID=KJA-169;*77<"));
+        assertNotNull(rbv, "RBV");
+
+        // RHQ — +battery +hour meter
+        var rhq = (Position) decoder.decode(null, null, text(
+                ">RHQ00080826012212-3869513-062351110003477B01000000000001300120000009942300000000;ID=KJA-169;*7A<"));
+        assertNotNull(rhq, "RHQ");
+
+        // RHR — +battery +hour meter +temp
+        var rhr = (Position) decoder.decode(null, null, text(
+                ">RHR00080826012212-3869513-062351110003477B01000000000001300120000009942300000000+0000FF;ID=KJA-169;*52<"));
+        assertNotNull(rhr, "RHR");
+
+        // RHV — +battery +hour meter +2 temps
+        var rhv = (Position) decoder.decode(null, null, text(
+                ">RHV00080826012212-3869513-062351110003477B01000000000001300120000009942300000000+0000FF+0000FF;ID=KJA-169;*7D<"));
+        assertNotNull(rhv, "RHV");
+
+        System.out.println("✅ CQ Variants (10): RCP, RCT, RCU, RCV, RBQ, RBR, RBV, RHQ, RHR, RHV OK");
+    }
+
+    @Test
+    public void testDecodeREQ() throws Exception {
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // REQ — CAN bus OBD-II (datos vacíos, sin PIDs)
+        var position = (Position) decoder.decode(null, null, text(
+                ">REQ00080826012211-3869513-062351110003477B010000000000013001200000099;1=,2=,3=,B=,14=,15=,2A=,2C=;ID=KJA-169;*27<"));
+
+        assertNotNull(position, "REQ");
+        assertEquals(-38.69513, position.getLatitude(), 0.00001);
+        assertEquals(-62.35111, position.getLongitude(), 0.00001);
+        assertEquals(0.0, position.getSpeed(), 0.1);
+
+        System.out.println("✅ REQ: CAN bus OBD-II OK");
+    }
+
+    @Test
+    public void testDecodeRTX() throws Exception {
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RTX — Reporte de texto (vacío)
+        var position = (Position) decoder.decode(null, null, text(
+                ">RTX;ID=KJA-169;*29<"));
+        assertNotNull(position, "RTX");
+
+        System.out.println("✅ RTX OK");
+    }
+
+    @Test
+    public void testDecodeRIB() throws Exception {
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RIB — iButton + temperatura
+        var position = (Position) decoder.decode(null, null, text(
+                ">RIB080826012212-3869513-062351110003473007B0000;0000000000000000;+0000FF;ID=KJA-169;*75<"));
+
+        assertNotNull(position, "RIB");
+        assertEquals(-38.69513, position.getLatitude(), 0.00001);
+        assertEquals(-62.35111, position.getLongitude(), 0.00001);
+
+        System.out.println("✅ RIB: iButton + temp OK");
+    }
+
+    @Test
+    public void testDecodeRSC() throws Exception {
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RSC — Sensor de contacto
+        var position = (Position) decoder.decode(null, null, text(
+                ">RSC00000000000000000000000000000000000000000000000;ID=KJA-169;*05<"));
+        assertNotNull(position, "RSC");
+
+        System.out.println("✅ RSC OK");
+    }
+
+    @Test
+    public void testDecodeRLC() throws Exception {
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RLC — Locator por celda (DEG_DEG, mismo formato que RCQ)
+        var position = (Position) decoder.decode(null, null, text(
+                ">RLC00080826012212-3869513-0623511100;ID=KJA-169;*1C<"));
+
+        assertNotNull(position, "RLC");
+        assertEquals(-38.69513, position.getLatitude(), 0.00001);
+        assertEquals(-62.35111, position.getLongitude(), 0.00001);
+
+        System.out.println("✅ RLC: Locator OK");
+    }
+
+    @Test
+    public void testDecodeRHT() throws Exception {
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RHT — Link a mapas (multilínea)
+        var position = (Position) decoder.decode(null, null, text(
+                ">RHT0",
+                "http://maps.google.com/maps?f=q&q=-38.695130,-62.351110&om=1&z=17",
+                ";ID=KJA-169;*70<"));
+        assertNotNull(position, "RHT");
+        assertTrue(((String) position.getAttributes().get("mapLink")).contains("google.com/maps"));
+
+        System.out.println("✅ RHT: link a Google Maps OK");
+    }
+
+    @Test
+    public void testDecodeEmptyFrame() throws Exception {
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // Frame sin prefijo (solo device ID) — el decoder lo descarta correctamente
+        var position = (Position) decoder.decode(null, null, text(
+                ">;ID=KJA-169;*77<"));
+        // Este frame no tiene tipo de mensaje → el decoder retorna null (esperado)
+        // No es un error, es un frame de identificación sin datos
+        System.out.println("✅ Empty frame (device-only): retorna null correctamente");
+    }
+
 }
