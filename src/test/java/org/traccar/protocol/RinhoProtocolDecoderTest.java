@@ -74,12 +74,14 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
         String alarms00 = (String) pos00.getAttributes().get(Position.KEY_ALARM);
         assertTrue(alarms00 == null, "Evento 00 no debería generar alarma: " + alarms00);
 
-        // Evento 03: Capó Cerrado (informativo, sin alarma)
+        // Evento 03: Capó Cerrado (informativo, aparece como general)
         var pos03 = (Position) decoder.decode(null, null, text(
                 ">RCQ03080726150000-3460400-0583820000000080001050001A30013050001002115;#0002;ID=KJA-169<"));
         assertNotNull(pos03);
         String alarms03 = (String) pos03.getAttributes().get(Position.KEY_ALARM);
-        assertTrue(alarms03 == null, "Evento 03 (Capó Cerrado) no debería generar alarma: " + alarms03);
+        assertTrue(alarms03 != null && alarms03.contains("general"),
+                "Evento 03 (Capó Cerrado) debería generar alarma general: " + alarms03);
+        assertEquals("Capó Cerrado", pos03.getAttributes().get("eventDescription"));
 
         // Evento 13: RES. (sin alarma)
         var pos13 = (Position) decoder.decode(null, null, text(
