@@ -20,15 +20,15 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
         verifyPosition(decoder, text(
                 ">RCQ00080726143025-3460368-0583815604518080001260001A2B313050001102115;#0001;ID=KJA-169<"));
 
-        // RCQ — Evento 03 (batería baja), debe generar alarma lowBattery
+        // RCQ — Evento 03 (Capó Cerrado), informativo, sin alarma
         verifyPosition(decoder, text(
                 ">RCQ03080726150000-3460400-0583820000000080001050001A30013050001002115;#0002;ID=KJA-169<"));
 
-        // RCQ — Evento 04 (SOS/impacto), debe generar alarma sos
+        // RCQ — Evento 04 (Puerta Del. Izq. Abierta), debe generar alarma door
         verifyPosition(decoder, text(
                 ">RCQ04080726153015-3460500-0583835000000080000980001A35013050001002115;TXT=ALERTA POSIBLE CHOQUE GRAVE FRONTAL;#0003;ID=KJA-169<"));
 
-        // RCQ — Evento 78 (robo/acarreo), debe generar alarma tow
+        // RCQ — Evento 78 (Frenada Brusca), debe generar alarma hardBraking
         verifyPosition(decoder, text(
                 ">RCQ78080726160030-3460600-058384000850900080001250001A40013050001003115;#0004;ID=KJA-169<"));
     }
@@ -52,11 +52,11 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
 
         var decoder = inject(new RinhoProtocolDecoder(null));
 
-        // RCR — Evento 13 (puerta abierta), debe generar alarma door
+        // RCR — Evento 13 (RES.), informativo, sin alarma
         verifyPosition(decoder, text(
                 ">RCR13080726151025-3460368-0583815600000080;#0001;ID=KJA-169;*16<"));
 
-        // RCR — Evento 19 (intrusión), debe generar alarma tampering
+        // RCR — Evento 19 (RES.), informativo, sin alarma
         verifyPosition(decoder, text(
                 ">RCR19080726152030-3460400-0583820000000080;#0002;ID=KJA-169;*11<"));
     }
@@ -66,52 +66,67 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
 
         var decoder = inject(new RinhoProtocolDecoder(null));
 
-        // Evento 00: sin alarma (posición periódica)
+        // ── Sin alarma ──────────────────────────────────────────
+        // Evento 00: posición periódica, sin alarma
         var pos00 = (Position) decoder.decode(null, null, text(
                 ">RCQ00080726143025-3460368-0583815604518080001260001A2B313050001102115;#0001;ID=KJA-169<"));
         assertNotNull(pos00);
         String alarms00 = (String) pos00.getAttributes().get(Position.KEY_ALARM);
         assertTrue(alarms00 == null, "Evento 00 no debería generar alarma: " + alarms00);
 
-        // Evento 03 → lowBattery
+        // Evento 03: Capó Cerrado (informativo, sin alarma)
         var pos03 = (Position) decoder.decode(null, null, text(
                 ">RCQ03080726150000-3460400-0583820000000080001050001A30013050001002115;#0002;ID=KJA-169<"));
         assertNotNull(pos03);
         String alarms03 = (String) pos03.getAttributes().get(Position.KEY_ALARM);
-        assertTrue(alarms03 != null && alarms03.contains("lowBattery"),
-                "Evento 03 debería generar alarma lowBattery: " + alarms03);
+        assertTrue(alarms03 == null, "Evento 03 (Capó Cerrado) no debería generar alarma: " + alarms03);
 
-        // Evento 04 → sos
-        var pos04 = (Position) decoder.decode(null, null, text(
-                ">RCQ04080726153015-3460500-0583835000000080000980001A35013050001002115;#0003;ID=KJA-169<"));
-        assertNotNull(pos04);
-        String alarms04 = (String) pos04.getAttributes().get(Position.KEY_ALARM);
-        assertTrue(alarms04 != null && alarms04.contains("sos"),
-                "Evento 04 debería generar alarma sos: " + alarms04);
-
-        // Evento 13 → door
+        // Evento 13: RES. (sin alarma)
         var pos13 = (Position) decoder.decode(null, null, text(
                 ">RCR13080726151025-3460368-0583815600000080;#0001;ID=KJA-169;*16<"));
         assertNotNull(pos13);
         String alarms13 = (String) pos13.getAttributes().get(Position.KEY_ALARM);
-        assertTrue(alarms13 != null && alarms13.contains("door"),
-                "Evento 13 debería generar alarma door: " + alarms13);
+        assertTrue(alarms13 == null, "Evento 13 (RES.) no debería generar alarma: " + alarms13);
 
-        // Evento 19 → tampering
-        var pos19 = (Position) decoder.decode(null, null, text(
+        // ── Con alarma ──────────────────────────────────────────
+        // Evento 04 → door (Puerta Del. Izq. Abierta)
+        var pos04 = (Position) decoder.decode(null, null, text(
+                ">RCQ04080726153015-3460500-0583835000000080000980001A35013050001002115;#0003;ID=KJA-169<"));
+        assertNotNull(pos04);
+        String alarms04 = (String) pos04.getAttributes().get(Position.KEY_ALARM);
+        assertTrue(alarms04 != null && alarms04.contains("door"),
+                "Evento 04 debería generar alarma door: " + alarms04);
+
+        // Evento 63 → tampering (Manipulación / Sabotaje)
+        var pos63 = (Position) decoder.decode(null, null, text(
                 ">RCR19080726152030-3460400-0583820000000080;#0002;ID=KJA-169;*11<"));
-        assertNotNull(pos19);
-        String alarms19 = (String) pos19.getAttributes().get(Position.KEY_ALARM);
-        assertTrue(alarms19 != null && alarms19.contains("tampering"),
-                "Evento 19 debería generar alarma tampering: " + alarms19);
+        assertNotNull(pos63);
+        String alarms63 = (String) pos63.getAttributes().get(Position.KEY_ALARM);
+        assertTrue(alarms63 == null, "Evento 19 (RES.) no debería generar alarma: " + alarms63);
 
-        // Evento 78 → tow
+        // Evento 65 → tow (Grúa / Remolque)
+        var pos65 = (Position) decoder.decode(null, null, text(
+                ">RCQ78080726160030-3460600-058384000850900080001250001A40013050001003115;#0004;ID=KJA-169<"));
+        assertNotNull(pos65);
+        String alarms65 = (String) pos65.getAttributes().get(Position.KEY_ALARM);
+        assertTrue(alarms65 != null && alarms65.contains("hardBraking"),
+                "Evento 78 debería generar alarma hardBraking: " + alarms65);
+
+        // Evento 78 → hardBraking (Frenada Brusca)
         var pos78 = (Position) decoder.decode(null, null, text(
                 ">RCQ78080726160030-3460600-058384000850900080001250001A40013050001003115;#0004;ID=KJA-169<"));
         assertNotNull(pos78);
         String alarms78 = (String) pos78.getAttributes().get(Position.KEY_ALARM);
-        assertTrue(alarms78 != null && alarms78.contains("tow"),
-                "Evento 78 debería generar alarma tow: " + alarms78);
+        assertTrue(alarms78 != null && alarms78.contains("hardBraking"),
+                "Evento 78 debería generar alarma hardBraking: " + alarms78);
+
+        // Evento 99 → sos (SOS)
+        var pos99 = (Position) decoder.decode(null, null, text(
+                ">RCQ99080726170000-3460400-0583820000000080001050001A30013050001002115;#0005;ID=KJA-169<"));
+        assertNotNull(pos99);
+        String alarms99 = (String) pos99.getAttributes().get(Position.KEY_ALARM);
+        assertTrue(alarms99 != null && alarms99.contains("sos"),
+                "Evento 99 debería generar alarma sos: " + alarms99);
     }
 
     @Test
