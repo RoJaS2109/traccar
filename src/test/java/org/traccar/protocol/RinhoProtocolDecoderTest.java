@@ -358,4 +358,38 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
         System.out.println("  Batería: " + position.getAttributes().get("battery") + "V");
     }
 
+    @Test
+    public void testDecodeRAE() throws Exception {
+
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RAE — Reporte Analógico con Signo (±dddd para cada canal)
+        var position = (Position) decoder.decode(null, null, text(
+                ">RAE00080826011155+0325+0326+0000+0000+0000+0000+0000+0423;ID=KJA-169;*22<"));
+
+        assertNotNull(position, "El decoder debería parsear RAE correctamente");
+
+        // Fecha: 08/08/2026 01:11:55 UTC
+        var cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        cal.setTime(position.getFixTime());
+        assertEquals(2026, cal.get(java.util.Calendar.YEAR));
+        assertEquals(8, cal.get(java.util.Calendar.DAY_OF_MONTH));
+        assertEquals(8, cal.get(java.util.Calendar.MONTH) + 1);
+        assertEquals(1, cal.get(java.util.Calendar.HOUR_OF_DAY));
+        assertEquals(11, cal.get(java.util.Calendar.MINUTE));
+        assertEquals(55, cal.get(java.util.Calendar.SECOND));
+
+        // Canales con signo
+        assertEquals(3.25, ((Number) position.getAttributes().get("ain00")).doubleValue(), 0.01);
+        assertEquals(3.26, ((Number) position.getAttributes().get("ain01")).doubleValue(), 0.01);
+        assertEquals(0.0, ((Number) position.getAttributes().get("ain02")).doubleValue(), 0.01);
+        assertEquals(4.23, ((Number) position.getAttributes().get("battery")).doubleValue(), 0.01);
+
+        System.out.println("✅ RAE decodificado:");
+        System.out.println("  Fecha:   " + position.getFixTime());
+        System.out.println("  AIN00:   " + position.getAttributes().get("ain00") + "V");
+        System.out.println("  AIN01:   " + position.getAttributes().get("ain01") + "V");
+        System.out.println("  Batería: " + position.getAttributes().get("battery") + "V");
+    }
+
 }
