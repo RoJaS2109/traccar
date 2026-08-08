@@ -176,4 +176,103 @@ public class RinhoProtocolDecoderTest extends ProtocolTest {
         System.out.println("  Válido:      " + position.getValid());
     }
 
+    @Test
+    public void testDecodeRGP() throws Exception {
+
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RGP — Reporte GPS (estándar simplificado)
+        var position = (Position) decoder.decode(null, null, text(
+                ">RGP070826204709-3869514-062351120001083007F0000;ID=KJA-169;*4E<"));
+
+        assertNotNull(position, "El decoder debería parsear RGP correctamente");
+
+        // Fecha: 07/08/2026 20:47:09 UTC
+        var cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        cal.setTime(position.getFixTime());
+        assertEquals(2026, cal.get(java.util.Calendar.YEAR));
+        assertEquals(7, cal.get(java.util.Calendar.DAY_OF_MONTH));
+        assertEquals(8, cal.get(java.util.Calendar.MONTH) + 1);
+        assertEquals(20, cal.get(java.util.Calendar.HOUR_OF_DAY));
+        assertEquals(47, cal.get(java.util.Calendar.MINUTE));
+        assertEquals(9, cal.get(java.util.Calendar.SECOND));
+
+        // Coordenadas: -38.69514, -62.35112
+        assertEquals(-38.69514, position.getLatitude(), 0.00001);
+        assertEquals(-62.35112, position.getLongitude(), 0.00001);
+
+        // Speed 0, Course 108°
+        assertEquals(0.0, position.getSpeed(), 0.1);
+        assertEquals(108.0, position.getCourse(), 0.1);
+
+        // GPS: fix=3D, age=0
+        assertEquals(3, ((Number) position.getAttributes().get("gpsFix")).intValue());
+        assertEquals(0, ((Number) position.getAttributes().get("gpsAge")).intValue());
+
+        // IGN+IN: 0x7F → IGN=0, IN0-6=1
+        assertEquals(0x7F, ((Number) position.getAttributes().get(Position.KEY_INPUT)).intValue());
+
+        // PDOP=0, valid
+        assertEquals(0, ((Number) position.getAttributes().get(Position.KEY_PDOP)).intValue());
+        assertTrue(position.getValid());
+
+        System.out.println("✅ RGP decodificado correctamente:");
+        System.out.println("  Fecha:   " + position.getFixTime());
+        System.out.println("  Lat:     " + position.getLatitude());
+        System.out.println("  Lon:     " + position.getLongitude());
+        System.out.println("  Course:  " + position.getCourse() + "°");
+        System.out.println("  Speed:   " + position.getSpeed() + " kn");
+        System.out.println("  GPS Fix: " + position.getAttributes().get("gpsFix") + "D, age=" + position.getAttributes().get("gpsAge") + "s");
+        System.out.println("  IGN+IN:  0x" + Integer.toHexString(((Number) position.getAttributes().get(Position.KEY_INPUT)).intValue()));
+        System.out.println("  Válido:  " + position.getValid());
+    }
+
+    @Test
+    public void testDecodeRCY() throws Exception {
+
+        var decoder = inject(new RinhoProtocolDecoder(null));
+
+        // RCY — Standard con Altitud
+        var position = (Position) decoder.decode(null, null, text(
+                ">RCY00070826204722-3869514-06235112000108-000012;IGN0;IN7F;XP00;ID=KJA-169;*13<"));
+
+        assertNotNull(position, "El decoder debería parsear RCY correctamente");
+
+        // Fecha: 07/08/2026 20:47:22 UTC
+        var cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+        cal.setTime(position.getFixTime());
+        assertEquals(2026, cal.get(java.util.Calendar.YEAR));
+        assertEquals(7, cal.get(java.util.Calendar.DAY_OF_MONTH));
+        assertEquals(8, cal.get(java.util.Calendar.MONTH) + 1);
+        assertEquals(20, cal.get(java.util.Calendar.HOUR_OF_DAY));
+        assertEquals(47, cal.get(java.util.Calendar.MINUTE));
+        assertEquals(22, cal.get(java.util.Calendar.SECOND));
+
+        // Coordenadas: -38.69514, -62.35112
+        assertEquals(-38.69514, position.getLatitude(), 0.00001);
+        assertEquals(-62.35112, position.getLongitude(), 0.00001);
+
+        // Speed 0, Course 108°, Altitude 0
+        assertEquals(0.0, position.getSpeed(), 0.1);
+        assertEquals(108.0, position.getCourse(), 0.1);
+        assertEquals(0.0, position.getAltitude(), 0.1);
+
+        // IGN=0, IN=0x7F, XP=0
+        assertEquals(0x7F, ((Number) position.getAttributes().get(Position.KEY_INPUT)).intValue());
+        assertEquals(0, ((Number) position.getAttributes().get(Position.KEY_OUTPUT)).intValue());
+
+        // Valid (GPS1=1, GPS2=2)
+        assertTrue(position.getValid());
+
+        System.out.println("✅ RCY decodificado correctamente:");
+        System.out.println("  Fecha:   " + position.getFixTime());
+        System.out.println("  Lat:     " + position.getLatitude());
+        System.out.println("  Lon:     " + position.getLongitude());
+        System.out.println("  Course:  " + position.getCourse() + "°");
+        System.out.println("  Speed:   " + position.getSpeed() + " kn");
+        System.out.println("  Alt:     " + position.getAltitude() + " m");
+        System.out.println("  IGN+IN:  0x" + Integer.toHexString(((Number) position.getAttributes().get(Position.KEY_INPUT)).intValue()));
+        System.out.println("  Válido:  " + position.getValid());
+    }
+
 }
