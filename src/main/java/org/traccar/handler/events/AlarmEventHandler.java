@@ -55,6 +55,10 @@ public class AlarmEventHandler extends BaseEventHandler {
             for (String alarm : alarms) {
                 Event event = new Event(Event.TYPE_ALARM, position);
                 event.set(Position.KEY_ALARM, alarm);
+                String eventDescription = position.getString("eventDescription");
+                if (eventDescription != null) {
+                    event.set("eventDescription", eventDescription);
+                }
                 callback.eventDetected(event);
             }
         }
