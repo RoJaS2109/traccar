@@ -183,9 +183,20 @@ cp traccar/src/main/java/org/traccar/protocol/RinhoProtocolDecoder.java \
 
 ## Docker
 
-La imagen oficial es `traccar/traccar:latest`. Las personalizaciones (branding, frontend) se aplican en el Dockerfile multi-stage del frontend que:
-1. Compila `OverrideTextFilter.java` con JDK 21
-2. Parchea `tracker-server.jar` con la clase compilada
+La imagen oficial es `traccar/traccar:latest`. Las personalizaciones (branding, frontend, protocolo Rinho, eventDescription) se aplican en el Dockerfile multi-stage del frontend que:
+1. Compila `OverrideTextFilter.java`, `RinhoProtocol*.java`, y `AlarmEventHandler.java` con JDK 21
+2. Parchea `tracker-server.jar` con las clases compiladas
 3. Copia el JAR parcheado sobre la imagen base
 
 No se usa un Dockerfile propio en `backend/docker/` — esos son los Dockerfiles oficiales de Traccar para referencia.
+
+### Sync de archivos parcheados
+
+Los siguientes archivos existen tanto en `src/main/java/` (fuente canónico) como en `traccar-web/docker/` (copia para build Docker). Deben mantenerse sincronizados:
+
+| Archivo | Propósito |
+|---------|-----------|
+| `RinhoProtocolDecoder.java` | Decodificador del protocolo Rinho (44 códigos de alarma) |
+| `AlarmEventHandler.java` | Propaga `eventDescription` de posición a evento |
+
+**Si se modifica el fuente canónico y no se sincroniza la copia en `docker/`, el deploy usará la versión antigua.**
