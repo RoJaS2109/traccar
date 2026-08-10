@@ -198,5 +198,6 @@ Los siguientes archivos existen tanto en `src/main/java/` (fuente canónico) com
 |---------|-----------|
 | `RinhoProtocolDecoder.java` | Decodificador del protocolo Rinho (44 códigos de alarma) |
 | `AlarmEventHandler.java` | Propaga `eventDescription` de posición a evento |
+| `NotificationFormatter.java` | Fallback para eventos maintenance sin Maintenance record |
 
 **Si se modifica el fuente canónico y no se sincroniza la copia en `docker/`, el deploy usará la versión antigua.**

@@ -71,6 +71,11 @@ public class NotificationFormatter {
         }
         if (event.getMaintenanceId() != 0) {
             velocityContext.put("maintenance", cacheManager.getObject(Maintenance.class, event.getMaintenanceId()));
+        } else if (event.getType().equals(Event.TYPE_MAINTENANCE)) {
+            Maintenance fallback = new Maintenance();
+            String eventDescription = event.getString("eventDescription");
+            fallback.setName(eventDescription != null ? eventDescription : "Required");
+            velocityContext.put("maintenance", fallback);
         }
         String driverUniqueId = event.getString(Position.KEY_DRIVER_UNIQUE_ID);
         if (driverUniqueId != null) {
