@@ -145,7 +145,17 @@ Mapea 44 códigos de evento Rinho a constantes `Position.ALARM_*` de Traccar. 13
 
 **`getEventDescription(int eventCode)`** devuelve la descripción en español de `listado.txt` y la almacena en el atributo `eventDescription`.
 
-Patrón en los 5 puntos donde se setea alarma + descripción:
+**`getEventType(int eventCode)`** enruta cada código al tipo nativo Traccar (`Event.TYPE_*`):
+- `0x35, 0x37` → `geofenceEnter`
+- `0x36` → `geofenceExit`
+- `0x40, 0x46` → `deviceFuelDrop`
+- `0x74, 0x77` → `deviceOverspeed`
+- `0x24, 0x41, 0x42, 0x43, 0x44` → `maintenance`
+- resto → `alarm`
+
+**`getEventCategory(int eventCode)`** clasifica eventos informativos como `"aviso"` (puertas cerradas, reconexiones, pérdidas de conexión) para que la UI muestre "Aviso" en vez de "Alarma".
+
+Patrón en los 5 puntos donde se setea alarma + descripción + categoría + tipo:
 ```java
 String alarm = decodeAlarm(eventCode);
 if (alarm != null) {
@@ -155,14 +165,21 @@ String desc = getEventDescription(eventCode);
 if (desc != null) {
     position.set("eventDescription", desc);
 }
+position.set("eventCategory", getEventCategory(eventCode));
+position.set("eventType", getEventType(eventCode));
 ```
 
 **ACK:** El decoder envía `>ACK;#NNNN;ID=XXXX;*CC<` por cada mensaje recibido con `msgNum < 0x8000`.
 
-**Importante — sincronización con docker:** El decoder también existe en `traccar-web/docker/org/traccar/protocol/RinhoProtocolDecoder.java` para el Dockerfile multi-stage. Cada cambio en el decoder debe sincronizarse:
+**Importante — sincronización con docker:** Los archivos modificados del backend deben copiarse al overlay Docker en `traccar-web/docker/` para que el build los incluya en el JAR parcheado:
 ```bash
-cp traccar/src/main/java/org/traccar/protocol/RinhoProtocolDecoder.java \
-   traccar/traccar-web/docker/org/traccar/protocol/RinhoProtocolDecoder.java
+# Desde traccar/
+cp src/main/java/org/traccar/protocol/RinhoProtocolDecoder.java \
+   traccar-web/docker/org/traccar/protocol/RinhoProtocolDecoder.java
+cp src/main/java/org/traccar/handler/events/AlarmEventHandler.java \
+   traccar-web/docker/org/traccar/handler/events/AlarmEventHandler.java
+cp src/main/java/org/traccar/notification/NotificationFormatter.java \
+   traccar-web/docker/org/traccar/notification/NotificationFormatter.java
 ```
 
 **Documentación completa:** [`traccar-web/docs/GPS_RINHO/protocolo-rinho.md`](traccar-web/docs/GPS_RINHO/protocolo-rinho.md)
@@ -183,9 +200,9 @@ cp traccar/src/main/java/org/traccar/protocol/RinhoProtocolDecoder.java \
 
 ## Docker
 
-La imagen oficial es `traccar/traccar:latest`. Las personalizaciones (branding, frontend, protocolo Rinho, eventDescription) se aplican en el Dockerfile multi-stage del frontend que:
-1. Compila `OverrideTextFilter.java`, `RinhoProtocol*.java`, y `AlarmEventHandler.java` con JDK 21
-2. Parchea `tracker-server.jar` con las clases compiladas
+La imagen oficial es `traccar/traccar:latest`. Las personalizaciones (branding, frontend, protocolo Rinho, eventDescription, notificaciones) se aplican en el Dockerfile multi-stage del frontend que:
+1. Compila `OverrideTextFilter.java`, `RinhoProtocol*.java`, `AlarmEventHandler.java`, y `NotificationFormatter.java` con JDK 21
+2. Parchea `tracker-server.jar` con las clases compiladas y templates Velocity personalizados
 3. Copia el JAR parcheado sobre la imagen base
 
 No se usa un Dockerfile propio en `backend/docker/` — esos son los Dockerfiles oficiales de Traccar para referencia.
@@ -196,8 +213,8 @@ Los siguientes archivos existen tanto en `src/main/java/` (fuente canónico) com
 
 | Archivo | Propósito |
 |---------|-----------|
-| `RinhoProtocolDecoder.java` | Decodificador del protocolo Rinho (44 códigos de alarma) |
-| `AlarmEventHandler.java` | Propaga `eventDescription` de posición a evento |
-| `NotificationFormatter.java` | Fallback para eventos maintenance sin Maintenance record |
+| `RinhoProtocolDecoder.java` | Decodificador del protocolo Rinho (44 códigos, `getEventType()`, `getEventCategory()`, `getEventDescription()`) |
+| `AlarmEventHandler.java` | Propaga `eventDescription`, `eventCategory` y `eventType` de posición a evento; dedup por `KEY_EVENT` |
+| `NotificationFormatter.java` | Fallback `Maintenance` para eventos Rinho sin `maintenanceId`; digest en español natural (`contains()` + `SimpleDateFormat`) |
 
 **Si se modifica el fuente canónico y no se sincroniza la copia en `docker/`, el deploy usará la versión antigua.**
