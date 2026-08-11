@@ -57,7 +57,7 @@ src/main/java/org/traccar/
 │   └── query/              # Builder de queries tipado
 └── web/                    # Filtros HTTP, MCP, anulación de branding
     ├── OverrideTextFilter.java   # Reemplaza ${title}, ${description}, ${colorPrimary}
-    └── OverrideFileFilter.java   # Reemplaza archivos (logos, íconos)
+    └── OverrideFileFilter.java   # Reemplaza archivos + routing subdominio mapa.*
 ```
 
 ## Build
@@ -226,7 +226,7 @@ cp src/main/java/org/traccar/notification/NotificationFormatter.java \
 
 **Attributes configurables desde UI** (Settings → Server) que pisan los defaults.
 
-`OverrideFileFilter.java` permite reemplazar archivos completos (logos, íconos) con versiones personalizadas subidas desde la UI.
+`OverrideFileFilter.java` permite reemplazar archivos completos (logos, íconos) con versiones personalizadas subidas desde la UI. También detecta el subdominio `mapa.*` vía header `Host` y sirve `/mapa.html` en vez de `/index.html` para la vista solo mapa.
 
 ## Docker
 
