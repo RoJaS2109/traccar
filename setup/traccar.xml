@@ -17,8 +17,10 @@
     <entry key='web.port'>8082</entry>
     <entry key='web.address'>0.0.0.0</entry>
 
-    <!-- GPS Protocols -->
-    <entry key='trackerServer.port'>5031</entry>
+    <!-- GPS Protocols: cada protocolo usa su puerto default (PortConfigSuffix.java).
+         OsmAnd=5055 (TCP), Rinho=5269 (UDP), TAIP=5031 (ambos).
+         Para cambiar un puerto, usar {protocolo}.port (ej: osmand.port=5055) -->
+    <!-- NO usar trackerServer.port: no es una clave válida de Traccar -->
 
     <!-- EventForwarder para rudatrak-ia -->
     <entry key='eventforwarder.enable'>true</entry>

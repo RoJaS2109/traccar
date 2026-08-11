@@ -81,6 +81,34 @@ src/main/java/org/traccar/
 3. **BroadcastService** — difusión de posiciones
 4. **ScheduleManager** — tareas programadas
 
+### Puertos de protocolos GPS
+
+Traccar usa los puertos por defecto definidos en `PortConfigSuffix.java`. **No existe la clave `trackerServer.port`** en el sistema de configuración — esa entrada en `setup/traccar.xml` es ignorada. Cada protocolo usa su propio `{protocolo}.port`:
+
+| Protocolo | Puerto default | Transporte | Dispositivo |
+|-----------|:---:|---|---|
+| `osmand` | **5055** | TCP (HTTP) | Traccar Client (Android/iOS), OsmAnd |
+| `rinho` | **5269** | UDP | Rinho IoT tracker (EG915U + LC86G) |
+| `taip` | **5031** | ambos | Trackers genéricos TAIP |
+
+**IMPORTANTE:** El entry `<entry key='trackerServer.port'>5031</entry>` en `setup/traccar.xml` **no es una clave válida** y es ignorada por Traccar. Si se necesita cambiar el puerto de un protocolo, usar `osmand.port`, `rinho.port`, etc.
+
+### Flujo de conexión de dispositivos
+
+```
+Tracker GPS (Rinho) ──UDP──▶ router:5031 ──▶ docker:5031/udp ──▶ Traccar (TAIP 5031)
+
+Traccar Client (app) ──HTTPS──▶ gps.rudatrak.com:443
+    │                               │
+    │  Cloudflare (gris = DNS only) │  NPM (SSL termination)
+    │                               ▼
+    │                       http://traccar:5055 ──▶ Traccar (OsmAnd TCP 5055)
+    │
+    └── Alternativa directa: gps.rudatrak.com:5055 ──▶ router:5055 ──▶ docker:5055
+```
+
+**Punto clave:** Traccar Client usa el protocolo **OsmAnd** (HTTP/TCP, puerto 5055). NPM debe forwardear `gps.rudatrak.com → http://traccar:5055`. Si se forwardea a `traccar:5031` (TAIP, UDP), la app no funciona porque no hay un listener HTTP en ese puerto.
+
 ## API REST
 
 Recursos en `api/resource/` (24 endpoints). Mapeados por Jersey. Ejemplos clave:
