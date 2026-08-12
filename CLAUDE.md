@@ -98,16 +98,16 @@ Traccar usa los puertos por defecto definidos en `PortConfigSuffix.java`. **No e
 ```
 Tracker GPS (Rinho) ──UDP──▶ router:5031 ──▶ docker:5031/udp ──▶ Traccar (TAIP 5031)
 
-Traccar Client (app) ──HTTPS──▶ gps.rudatrak.com:443
+Traccar Client (app) ──HTTPS──▶ mh.rudatrak.com:443
     │                               │
     │  Cloudflare (gris = DNS only) │  NPM (SSL termination)
     │                               ▼
     │                       http://traccar:5055 ──▶ Traccar (OsmAnd TCP 5055)
     │
-    └── Alternativa directa: gps.rudatrak.com:5055 ──▶ router:5055 ──▶ docker:5055
+    └── Alternativa directa: mh.rudatrak.com:5055 ──▶ router:5055 ──▶ docker:5055
 ```
 
-**Punto clave:** Traccar Client usa el protocolo **OsmAnd** (HTTP/TCP, puerto 5055). NPM debe forwardear `gps.rudatrak.com → http://traccar:5055`. Si se forwardea a `traccar:5031` (TAIP, UDP), la app no funciona porque no hay un listener HTTP en ese puerto.
+**Punto clave:** Traccar Client usa el protocolo **OsmAnd** (HTTP/TCP, puerto 5055). NPM debe forwardear `mh.rudatrak.com → http://traccar:5055`. Si se forwardea a `traccar:5031` (TAIP, UDP), la app no funciona porque no hay un listener HTTP en ese puerto.
 
 ## API REST
 
