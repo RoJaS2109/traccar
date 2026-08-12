@@ -73,12 +73,7 @@ public class OverrideFileFilter implements Filter {
         boolean appRoute = path.endsWith("/") || !last.contains(".");
 
         if (acceptHtml && appRoute) {
-            String host = httpRequest.getHeader("Host");
-            if (host != null && host.startsWith("mapa.") && (path.equals("/") || path.isEmpty())) {
-                request.getRequestDispatcher("/mapa.html").forward(request, response);
-            } else {
-                request.getRequestDispatcher("/index.html").forward(request, response);
-            }
+            request.getRequestDispatcher("/index.html").forward(request, response);
             return;
         }
 
