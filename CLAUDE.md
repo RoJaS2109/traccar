@@ -57,7 +57,7 @@ src/main/java/org/traccar/
 │   └── query/              # Builder de queries tipado
 └── web/                    # Filtros HTTP, MCP, anulación de branding
     ├── OverrideTextFilter.java   # Reemplaza ${title}, ${description}, ${colorPrimary}
-    └── OverrideFileFilter.java   # Reemplaza archivos + routing subdominio mapa.*
+    └── OverrideFileFilter.java   # Reemplaza archivos (logos, íconos)
 ```
 
 ## Build
@@ -202,8 +202,6 @@ position.set("eventType", getEventType(eventCode));
 **Importante — sincronización con docker:** Los archivos modificados del backend deben copiarse al overlay Docker en `traccar-web/docker/` para que el build los incluya en el JAR parcheado:
 ```bash
 # Desde traccar/
-cp src/main/java/org/traccar/web/OverrideFileFilter.java \
-   traccar-web/docker/org/traccar/web/OverrideFileFilter.java
 cp src/main/java/org/traccar/protocol/RinhoProtocolDecoder.java \
    traccar-web/docker/org/traccar/protocol/RinhoProtocolDecoder.java
 cp src/main/java/org/traccar/handler/events/AlarmEventHandler.java \
@@ -226,7 +224,7 @@ cp src/main/java/org/traccar/notification/NotificationFormatter.java \
 
 **Attributes configurables desde UI** (Settings → Server) que pisan los defaults.
 
-`OverrideFileFilter.java` permite reemplazar archivos completos (logos, íconos) con versiones personalizadas subidas desde la UI. También detecta el subdominio `mapa.*` vía header `Host` y sirve `/mapa.html` en vez de `/index.html` para la vista solo mapa.
+`OverrideFileFilter.java` permite reemplazar archivos completos (logos, íconos) con versiones personalizadas subidas desde la UI.
 
 ## Docker
 
@@ -246,6 +244,5 @@ Los siguientes archivos existen tanto en `src/main/java/` (fuente canónico) com
 | `RinhoProtocolDecoder.java` | Decodificador del protocolo Rinho (44 códigos, `getEventType()`, `getEventCategory()`, `getEventDescription()`) |
 | `AlarmEventHandler.java` | Propaga `eventDescription`, `eventCategory` y `eventType` de posición a evento; dedup por `KEY_EVENT` |
 | `NotificationFormatter.java` | Fallback `Maintenance` para eventos Rinho sin `maintenanceId`; digest en español natural (`contains()` + `SimpleDateFormat`) |
-| `OverrideFileFilter.java` | Subdominio `mapa.*` → sirve `/mapa.html` en vez de `/index.html` (vista solo mapa) |
 
 **Si se modifica el fuente canónico y no se sincroniza la copia en `docker/`, el deploy usará la versión antigua.**
